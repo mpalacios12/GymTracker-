@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GymTracker Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-color: #1e1e1e;
+            --text-color: #ffffff;
+            --primary-color: #bb86fc;
+            --secondary-color: #03dac6;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px;
+        }
+        .container {
+            max-width: 100%;
+            padding: 10px;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .card {
+            background-color: var(--card-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: #2d2d2d;
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+        button {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            width: 100%;
+            font-size: 1rem;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background-color: #333;
+            color: var(--secondary-color);
+        }
+        .group-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .group-btn {
+            flex: 1 1 calc(50% - 10px);
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .group-btn.active {
+            background-color: var(--primary-color);
+            color: #000;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .input-group input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💪 GymTracker Pro</h1>
+        
+        <div class="card">
+            <div class="group-buttons">
+                <button class="group-btn active" onclick="filterByGroup('pecho')">Pecho</button>
+                <button class="group-btn" onclick="filterByGroup('espalda')">Espalda</button>
+                <button class="group-btn" onclick="filterByGroup('piernas')">Piernas</button>
+                <button class="group-btn" onclick="filterByGroup('hombros')">Hombros</button>
+                <button class="group-btn" onclick="filterByGroup('brazos')">Brazos</button>
+                <button class="group-btn" onclick="filterByGroup('abdomen')">Abdomen</button>
+            </div>
+            
+            <select id="exerciseSelect"></select>
+            
+            <div class="input-group">
+                <input type="number" id="weightInput" placeholder="Peso (kg)">
+                <input type="number" id="repsInput" placeholder="Repeticiones">
+                <input type="number" id="setsInput" placeholder="Series" value="4">
+            </div>
+            
+            <button onclick="addRecord()">Guardar</button>
+        </div>
+
+        <div class="card">
+            <h2>Historial</h2>
+            <table id="recordsTable">
+                <thead>
+                    <tr>
+                        <th>Ejercicio</th>
+                        <th>Peso</th>
+                        <th>Reps</th>
+                        <th>Series</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Base de datos de ejercicios
+        const exercisesByGroup = {
+            pecho: ["Press de pecho en máquina", "Aperturas en máquina", "Press inclinado"],
+            espalda: ["Jalón al pecho", "Remo sentado", "Pull-over"],
+            piernas: ["Sentadilla Smith", "Prensa piernas", "Curl femoral"],
+            hombros: ["Press hombros", "Elevaciones laterales", "Pájaros"],
+            brazos: ["Curl bíceps", "Fondos tríceps", "Curl martillo"],
+            abdomen: ["Crunch máquina", "Elevación piernas"]
+        };
+
+        let currentGroup = 'pecho';
+
+        function loadExercises(group) {
+            const exerciseSelect = document.getElementById("exerciseSelect");
+            exerciseSelect.innerHTML = "";
+            exercisesByGroup[group].forEach(exercise => {
+                const option = document.createElement("option");
+                option.value = exercise;
+                option.textContent = exercise;
+                exerciseSelect.appendChild(option);
+            });
+        }
+
+        function filterByGroup(group) {
+            currentGroup = group;
+            loadExercises(group);
+            document.querySelectorAll(".group-btn").forEach(btn => {
+                btn.classList.remove("active");
+                if (btn.textContent.toLowerCase().includes(group)) {
+                    btn.classList.add("active");
+                }
+            });
+            loadRecords();
+        }
+
+        function addRecord() {
+            const exercise = document.getElementById("exerciseSelect").value;
+            const weight = document.getElementById("weightInput").value;
+            const reps = document.getElementById("repsInput").value;
+            const sets = document.getElementById("setsInput").value;
+            const date = new Date().toLocaleDateString();
+
+            if (exercise && weight && reps && sets) {
+                const record = { group: currentGroup, exercise, weight, reps, sets, date };
+                const records = JSON.parse(localStorage.getItem("gymRecords") || "[]");
+                records.push(record);
+                localStorage.setItem("gymRecords", JSON.stringify(records));
+                
+                document.getElementById("weightInput").value = "";
+                document.getElementById("repsInput").value = "";
+                loadRecords();
+            }
+        }
+
+        function loadRecords() {
+            const records = JSON.parse(localStorage.getItem("gymRecords") || "[]");
+            const tbody = document.getElementById("recordsBody");
+            tbody.innerHTML = "";
+
+            const filteredRecords = records.filter(record => record.group === currentGroup);
+
+            if (filteredRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No hay registros</td></tr>`;
+            } else {
+                filteredRecords.forEach(record => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${record.exercise}</td>
+                        <td>${record.weight} kg</td>
+                        <td>${record.reps}</td>
+                        <td>${record.sets}</td>
+                        <td>${record.date}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadExercises(currentGroup);
+            loadRecords();
+        });
+    </script>
+</body>
+</html>
