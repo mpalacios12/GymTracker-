@@ -1,0 +1,22 @@
+name: Build APK
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+    - name: Install Cordova
+      run: npm install -g cordova
+    - name: Build APK
+      run: |
+        cordova platform add android
+        cordova build android --release
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: gymtracker-apk
+        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
